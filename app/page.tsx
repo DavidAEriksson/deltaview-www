@@ -2,6 +2,7 @@ import Image from "next/image";
 import NextLink from "next/link";
 import type { ReactNode } from "react";
 import { CopyText } from "./copy";
+import { DemoVideo } from "./demo-video";
 import { INSTALL, REPO } from "./site";
 
 const VERSION = "v1.1.0";
@@ -106,28 +107,37 @@ export default function Home() {
       <main>
         {/* Hero */}
         <section
-          className={`${wrap} flex flex-wrap items-center gap-[64px] pt-[72px] pb-[96px]`}
+          className={`${wrap} flex flex-col gap-[48px] pt-[64px] pb-[104px]`}
         >
-          <div className="flex min-w-0 flex-[1_1_440px] flex-col gap-[28px]">
-            <h1 className="m-0 text-[clamp(44px,6vw,80px)] font-bold leading-[0.98] tracking-[-0.035em]">
+          <div className="flex flex-wrap items-end gap-x-[64px] gap-y-[32px]">
+            <h1 className="m-0 flex-[3_1_520px] text-[clamp(44px,6vw,84px)] font-bold leading-[0.98] tracking-[-0.035em]">
               Review a branch where it renders.
             </h1>
-            <p className="m-0 max-w-[34em] text-[20px] leading-[1.5] text-dv-body">
-              Run{" "}
-              <code className="rounded-[4px] bg-dv-rule px-[6px] py-[2px] text-[16px]">
-                /deltaview feat/checkout
-              </code>{" "}
-              and your app opens in Chrome with an outline on every element the
-              branch changes. Open one to read its diff, approve or reject it,
-              and post the whole thing as one GitHub review.
-            </p>
-            <InstallBox />
-            <p className="m-0 text-[16px] text-dv-muted">
-              Needs Claude Code with Claude in Chrome.{" "}
-              <NextLink href="/docs">Read the setup guide</NextLink>
-            </p>
+            <div className="flex min-w-0 flex-[2_1_380px] flex-col gap-[20px]">
+              <p className="m-0 text-[19px] leading-[1.5] text-dv-body">
+                Run{" "}
+                <code className="rounded-[4px] bg-dv-rule px-[6px] py-[2px] text-[15px]">
+                  /deltaview feat/checkout
+                </code>{" "}
+                and your app opens in Chrome with an outline on every element
+                the branch changes. Read each diff, approve or reject it, and
+                post one GitHub review.
+              </p>
+              <InstallBox />
+            </div>
           </div>
-          <HeroDemo />
+          <figure className="m-0 flex flex-col gap-[14px]">
+            <div className="aspect-[16/10] overflow-hidden rounded-[12px] border border-dv-edge bg-white">
+              <DemoVideo />
+            </div>
+            <figcaption className="max-w-[52em] text-[15px] leading-[1.5] text-dv-muted">
+              A real run on a demo shop&apos;s{" "}
+              <code className="text-[13px]">feat/checkout-summary</code> branch:
+              the order summary is rejected because the shipping rule is
+              duplicated, the other four items are approved, and Finish closes
+              the review.
+            </figcaption>
+          </figure>
         </section>
 
         {/* Problem statement */}
@@ -347,13 +357,15 @@ export default function Home() {
 function InstallBox({ dark }: { dark?: boolean }) {
   return (
     <div
-      className={`flex max-w-[520px] items-start justify-between gap-[12px] rounded-[8px] border py-[16px] pr-[16px] pl-[20px] ${
-        dark ? "max-w-none border-dv-body" : "border-dv-line bg-white"
+      className={`flex justify-between gap-[12px] rounded-[8px] border ${
+        dark
+          ? "items-start border-dv-body py-[16px] pr-[16px] pl-[20px]"
+          : "items-center border-dv-line bg-white py-[12px] pr-[12px] pl-[16px]"
       }`}
     >
       <pre
-        className={`m-0 text-[13px] leading-[1.8] break-words whitespace-pre-wrap ${
-          dark ? "text-dv-paper" : ""
+        className={`m-0 leading-[1.8] break-words whitespace-pre-wrap ${
+          dark ? "text-[13px] text-dv-paper" : "text-[12px]"
         }`}
       >
         {INSTALL}
@@ -366,72 +378,6 @@ function InstallBox({ dark }: { dark?: boolean }) {
             : "border-dv-line bg-dv-paper text-dv-ink"
         }`}
       />
-    </div>
-  );
-}
-
-/** A static app element with its overlay, and the review panel opened on it. */
-function HeroDemo() {
-  return (
-    <div
-      role="img"
-      aria-label="Illustration: an outlined order summary card with its diff, a plain-language summary, and approve, reject and comment buttons"
-      className="flex min-w-0 flex-[1_1_480px] flex-col gap-[12px]"
-    >
-      <div className="flex flex-col gap-[20px] rounded-[12px] bg-dv-well px-[28px] pt-[48px] pb-[28px]">
-        <div className="relative max-w-[360px]">
-          <div className="flex flex-col gap-[12px] rounded-[8px] bg-white px-[22px] py-[20px] text-[16px]">
-            <div className="text-[18px] font-semibold">Order summary</div>
-            <Row a="Subtotal" b="$84.00" />
-            <Row a="Shipping" b="Free" />
-            <div className="flex justify-between border-t border-dv-rule pt-[12px] font-semibold">
-              <span>Total</span>
-              <span>$84.00</span>
-            </div>
-          </div>
-          <div className="pointer-events-none absolute inset-[-7px] rounded-[11px] border-2 border-dv-mark" />
-          <div className={`${tag} top-[-32px] py-[4px]`}>Direct, 1 of 12</div>
-        </div>
-
-        <div className="ml-[32px] overflow-hidden rounded-[8px] border border-dv-ink bg-white">
-          <div className="border-b border-dv-rule px-[16px] py-[12px] font-dv-mono text-[12px] text-dv-body">
-            src/checkout/Summary.tsx
-          </div>
-          <pre className="m-0 overflow-x-auto text-[12px] leading-[1.75] [&>span]:block [&>span]:px-[16px]">
-            <span className="bg-dv-add-bg text-dv-add">
-              + const shipping = total &gt; 50 ? 0 : 4.9;
-            </span>
-            <span className="bg-dv-add-bg text-dv-add">
-              + &lt;Row label=&quot;Shipping&quot; value={"{fmt(shipping)}"}{" "}
-              /&gt;
-            </span>
-            <span className="bg-dv-chg-bg text-dv-chg">
-              ~ &lt;Row label=&quot;Total&quot; value=
-              {"{fmt(total + shipping)}"} /&gt;
-            </span>
-            <span className="bg-dv-del-bg text-dv-del">
-              - &lt;FreeShippingBanner /&gt;
-            </span>
-          </pre>
-          <p className="m-0 px-[16px] py-[14px] text-[15px] leading-[1.5] text-dv-body">
-            Adds a shipping row that is free above $50 and includes it in the
-            total. The free-shipping banner is removed.
-          </p>
-          <div className="flex flex-wrap gap-[8px] px-[16px] pb-[16px] text-[15px] [&>span]:inline-flex [&>span]:min-h-[44px] [&>span]:items-center [&>span]:rounded-[6px] [&>span]:border [&>span]:px-[18px]">
-            {/* Spans, not buttons: this is a picture of the panel, not a control. */}
-            <span className="border-dv-add bg-dv-add font-semibold text-white">
-              Approve
-            </span>
-            <span className="border-dv-del bg-white font-semibold text-dv-del">
-              Reject
-            </span>
-            <span className="border-dv-edge bg-white font-medium">Comment</span>
-          </div>
-        </div>
-      </div>
-      <p className="m-0 text-[14px] text-dv-muted">
-        feat/checkout-summary, running on localhost:4500/checkout
-      </p>
     </div>
   );
 }
