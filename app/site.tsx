@@ -6,11 +6,11 @@ export const INSTALL = "/plugin marketplace add DavidAEriksson/deltaview\n/plugi
 /** A shell/prompt snippet with a copy button. */
 export function Command({ children }: { children: string }) {
   return (
-    <div className="relative">
-      <Code block className="pr-3xl">
+    <div className="flex items-center gap-sm rounded-md border border-border-subtle bg-bg-surface py-xs pr-xs pl-md">
+      <Code block className="min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-sm">
         {children}
       </Code>
-      <CopyButton value={children} className="absolute right-xs top-xs" />
+      <CopyButton value={children} />
     </div>
   );
 }

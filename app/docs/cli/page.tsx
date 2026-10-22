@@ -51,7 +51,7 @@ export default function Cli() {
       {commands.map((c) => (
         <section key={c.name} className="space-y-md">
           <Title order={2}>{c.name}</Title>
-          <Code block>{c.usage}</Code>
+          <Command>{c.usage}</Command>
           <Text size="lg" tone="secondary">{c.body}</Text>
         </section>
       ))}
