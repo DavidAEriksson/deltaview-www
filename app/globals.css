@@ -16,3 +16,34 @@ body {
 .docs ol { list-style: decimal; }
 .docs li + li { margin-top: var(--spacing-xs); }
 .docs strong { color: var(--color-text-primary); font-weight: 500; }
+
+/* Landing page palette and type, from redesign/Main.dc.html. */
+@theme inline {
+  --font-dv: var(--font-familjen), system-ui, sans-serif;
+  --font-dv-mono: var(--font-martian), ui-monospace, monospace;
+  --color-dv-ink: #14161b;
+  --color-dv-paper: #f3f4f6;
+  --color-dv-body: #3a3e46;
+  --color-dv-muted: #545963;
+  --color-dv-dim: #bfc3ca;
+  --color-dv-line: #d3d6dc;
+  --color-dv-edge: #c9cdd3;
+  --color-dv-rule: #e4e6ea;
+  --color-dv-well: #e6e8ec;
+  --color-dv-raised: #f6f7f9;
+  --color-dv-mark: #c8175f;
+  --color-dv-add: #17663a;
+  --color-dv-add-bg: #e3f4e8;
+  --color-dv-chg: #6e4b00;
+  --color-dv-chg-bg: #fff3d6;
+  --color-dv-del: #a12a23;
+  --color-dv-del-bg: #fbe7e5;
+}
+
+/* In the base layer so per-element utilities (e.g. links on dark sections) still win. */
+@layer base {
+  .dv a { color: var(--color-dv-ink); text-underline-offset: 3px; }
+  .dv a:hover { color: var(--color-dv-mark); }
+  .dv a:focus-visible, .dv button:focus-visible { outline: 2px solid var(--color-dv-mark); outline-offset: 3px; }
+  .dv code, .dv pre { font-family: var(--font-dv-mono); }
+}

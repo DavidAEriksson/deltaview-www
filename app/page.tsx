@@ -1,275 +1,518 @@
+import Image from "next/image";
 import NextLink from "next/link";
-import {
-  Badge,
-  Button,
-  Card,
-  CardDescription,
-  CardTitle,
-  Code,
-  Container,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-} from "@fanzeal-intl/ui";
-import { Eye, FolderGit2, GitPullRequest, KeyRound, MousePointerClick, ShieldCheck } from "lucide-react";
-import { Command, INSTALL, REPO } from "./site";
+import type { ReactNode } from "react";
+import { CopyText } from "./copy";
+import { INSTALL, REPO } from "./site";
+
+const VERSION = "v1.1.0";
 
 const steps = [
-  ["Check out", "The ref goes into a temporary git worktree. Your working copy is never touched. Untracked .env files are copied across without being read."],
-  ["Install and test", "Dependencies install from your lockfile and your test command runs. Failing tests are reported, not fixed, and don't block the review."],
-  ["Analyse and anchor", "Claude reads the diff, groups every hunk into an item, and finds the on-screen element each item affects. It only navigates and reads; it never clicks."],
-  ["Review", "Your app opens in your own Chrome behind a small proxy that injects the overlay. Decide on each item, then click Finish review."],
+  [
+    "[1/4] Check out",
+    [
+      "worktree at .deltaview/wt/feat-checkout-summary",
+      "copied .env, .env.local (not read)",
+    ],
+    "The branch goes into a temporary worktree, so your own checkout is never touched.",
+  ],
+  [
+    "[2/4] Install and test",
+    ["pnpm install --frozen-lockfile", "pnpm test: 214 passed, 2 failed"],
+    "Dependencies install from your lockfile and your tests run. Failures are reported in the review, not fixed, and don't stop it.",
+  ],
+  [
+    "[3/4] Anchor",
+    ["41 hunks grouped into 12 items", "8 direct, 2 indirect, 2 backstage"],
+    "Claude reads the diff, groups the hunks and finds the element each group affects. It navigates and reads the page; it never clicks.",
+  ],
+  [
+    "[4/4] Review",
+    ["opened localhost:4500 in Chrome"],
+    "Your app opens behind a small proxy that draws the overlays. Decide on each item, then click Finish review.",
+  ],
 ] as const;
 
-const tiers = [
-  {
-    name: "Direct",
-    tone: "success" as const,
-    body: "The changed code renders something. The overlay sits on that element.",
-    example: "CheckoutSummary.tsx → the order summary card",
-  },
-  {
-    name: "Indirect",
-    tone: "info" as const,
-    body: "The change is in a hook, API handler or util, but something on screen triggers it. The overlay pins to the trigger and shows the chain.",
-    example: "Save button → useSaveOrder() → POST /api/orders → orders.handler.ts",
-  },
-  {
-    name: "Backstage",
-    tone: "warning" as const,
-    body: "No place on screen: migrations, CI, config, or UI behind an interaction. Listed in a drawer and tagged “not visually verified”.",
-    example: ".github/workflows/ci.yml",
-  },
+const guarantees: [string, ReactNode][] = [
+  [
+    "Your app's data",
+    "The agent only navigates by URL, scrolls and reads. No clicks, so no side effects against your backend.",
+  ],
+  [
+    "Your working copy",
+    <>
+      Everything runs in a worktree. The only writes are to{" "}
+      <code className="text-[14px]">.deltaview/</code>, which is added to{" "}
+      <code className="text-[14px]">.git/info/exclude</code>.
+    </>,
+  ],
+  [
+    "Your secrets",
+    ".env files are copied byte for byte and never printed. New env vars are reported by name only.",
+  ],
+  [
+    "Your trust",
+    "Anything it couldn't put on screen is marked not visually verified, in the overlay, on GitHub and in the manifest.",
+  ],
 ];
 
-const guardrails = [
-  [MousePointerClick, "Never clicks in your app", "While anchoring, the agent only navigates by URL, scrolls and reads. No side effects against your backend."],
-  [FolderGit2, "Your checkout stays clean", "Work happens in a worktree. The only writes are to .deltaview/, which is added to .git/info/exclude."],
-  [KeyRound, "Secrets stay unread", ".env files are copied byte for byte and never printed. New env vars are detected by name only."],
-  [Eye, "Nothing is reviewed unseen", "Anything not anchored to the UI is tagged “not visually verified” in the overlay, on GitHub and in the manifest."],
-] as const;
+const requirements: ReactNode[] = [
+  "Claude Code with the Claude in Chrome extension",
+  "Node.js 20 or later",
+  "A web project whose dev server already runs locally",
+  <>
+    <code className="text-[14px]">gh</code> signed in, to post reviews
+    (optional)
+  </>,
+];
+
+const h2 =
+  "m-0 text-[clamp(30px,3.2vw,40px)] font-bold leading-[1.1] tracking-[-0.02em]";
+const wrap = "mx-auto max-w-[1200px] px-[24px]";
+const tag =
+  "absolute left-[-7px] rounded-t-[4px] bg-dv-mark px-[8px] font-dv-mono text-[11px] whitespace-nowrap text-white";
+const hatch =
+  "bg-[repeating-linear-gradient(135deg,transparent_0_7px,rgba(20,22,27,0.06)_7px_8px)]";
 
 export default function Home() {
   return (
-    <main>
-      <section className="py-4xl">
-        <Container>
-          <Stack gap="xl" align="start" className="max-w-(--container-3xl)">
-            <Badge variant="brand">Claude Code plugin · v1.1.0</Badge>
-            <h1 className="text-display-xl">Review a branch where it renders.</h1>
-            <Text size="lg" tone="secondary">
-              Run <Code>/deltaview &lt;branch|commit&gt;</Code> and your app opens in your own Chrome with an overlay on every
-              element the change affects. Open one to see its diff and a plain-language breakdown, then approve, reject or
-              comment. Finish posts a single GitHub review.
-            </Text>
-            <div className="w-full max-w-(--container-xl)">
-              <Command>{INSTALL}</Command>
+    <div className="dv min-h-full flex-1 bg-dv-paper font-dv text-dv-ink">
+      <header
+        className={`${wrap} flex flex-wrap items-center justify-between gap-[16px] py-[20px]`}
+      >
+        <NextLink href="/">
+          {/* shortcut: logofulldark.png stacks a light variant under the dark one; crop to the top half until it's re-exported. */}
+          <Image
+            src="/logofulldark.png"
+            alt="deltaview"
+            width={891}
+            height={415}
+            priority
+            className="aspect-[891/207] h-[34px] w-auto object-cover object-top"
+          />
+        </NextLink>
+        <nav className="flex items-center gap-[28px] text-[16px]">
+          <NextLink href="/docs" className="no-underline">
+            Docs
+          </NextLink>
+          <a href={`${REPO}/releases`} className="text-dv-muted no-underline">
+            {VERSION}
+          </a>
+          <a href={REPO} className="no-underline">
+            GitHub
+          </a>
+        </nav>
+      </header>
+
+      <main>
+        {/* Hero */}
+        <section
+          className={`${wrap} flex flex-wrap items-center gap-[64px] pt-[72px] pb-[96px]`}
+        >
+          <div className="flex min-w-0 flex-[1_1_440px] flex-col gap-[28px]">
+            <h1 className="m-0 text-[clamp(44px,6vw,80px)] font-bold leading-[0.98] tracking-[-0.035em]">
+              Review a branch where it renders.
+            </h1>
+            <p className="m-0 max-w-[34em] text-[20px] leading-[1.5] text-dv-body">
+              Run{" "}
+              <code className="rounded-[4px] bg-dv-rule px-[6px] py-[2px] text-[16px]">
+                /deltaview feat/checkout
+              </code>{" "}
+              and your app opens in Chrome with an outline on every element the
+              branch changes. Open one to read its diff, approve or reject it,
+              and post the whole thing as one GitHub review.
+            </p>
+            <InstallBox />
+            <p className="m-0 text-[16px] text-dv-muted">
+              Needs Claude Code with Claude in Chrome.{" "}
+              <NextLink href="/docs">Read the setup guide</NextLink>
+            </p>
+          </div>
+          <HeroDemo />
+        </section>
+
+        {/* Problem statement */}
+        <section className="bg-dv-ink text-dv-paper">
+          <div
+            className={`${wrap} flex flex-wrap items-end gap-[48px] py-[96px]`}
+          >
+            <p className="m-0 flex-[2_1_520px] text-[clamp(30px,3.6vw,46px)] font-semibold leading-[1.12] tracking-[-0.02em]">
+              A green build of 77 files tells you the branch works. It
+              doesn&apos;t tell you where to look.
+            </p>
+            <p className="m-0 max-w-[30em] flex-[1_1_320px] text-[18px] leading-[1.55] text-dv-dim">
+              So you pull it and click around wherever you suspect trouble.
+              Deltaview turns that into a checklist: every changed hunk is
+              pinned to something on screen or listed separately, and nothing
+              gets skipped without saying so.
+            </p>
+          </div>
+        </section>
+
+        {/* How a run goes, shown as the command's own progress */}
+        <section
+          className={`${wrap} flex flex-col gap-[40px] pt-[112px] pb-[96px]`}
+        >
+          <h2 className={h2}>What happens when you run it</h2>
+          <div className="overflow-hidden rounded-[10px] border border-dv-line bg-white">
+            <div className="border-b border-dv-rule px-[24px] py-[16px] font-dv-mono text-[13px]">
+              &gt; /deltaview feat/checkout-summary
             </div>
-            <Group gap="md" wrap>
-              <Button asChild variant="primary" size="lg">
-                <NextLink href="/docs">Read the docs</NextLink>
-              </Button>
-              <Button asChild variant="secondary" size="lg">
-                <a href={REPO}>View on GitHub</a>
-              </Button>
-            </Group>
-          </Stack>
-        </Container>
-      </section>
+            {steps.map(([title, lines, body]) => (
+              <div
+                key={title}
+                className="flex flex-wrap gap-x-[40px] gap-y-[8px] border-b border-dv-rule px-[24px] py-[22px] last:border-b-0"
+              >
+                <div className="min-w-0 flex-[1_1_360px] font-dv-mono text-[13px] leading-[1.7] text-dv-body">
+                  <span className="font-medium text-dv-ink">{title}</span>
+                  {lines.map((l) => (
+                    <div key={l}>{l}</div>
+                  ))}
+                </div>
+                <p className="m-0 flex-[1_1_340px] text-[17px] leading-[1.5]">
+                  {body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <section className="pb-4xl">
-        <Container>
-          <OverlayPreview />
-        </Container>
-      </section>
+        {/* Tiers, told apart by outline style */}
+        <section
+          className={`${wrap} flex flex-col gap-[40px] pt-[48px] pb-[112px]`}
+        >
+          <div className="flex max-w-[40em] flex-col gap-[14px]">
+            <h2 className={h2}>Every change lands in one of three places</h2>
+            <p className="m-0 text-[18px] leading-[1.55] text-dv-body">
+              Each hunk belongs to exactly one item. The outline tells you how
+              directly it reaches the screen.
+            </p>
+          </div>
+          <TierDemo />
+          <div className="flex flex-wrap gap-x-[48px] gap-y-[32px]">
+            <Tier
+              name="Direct"
+              swatch={<span className="w-[28px] border-t-2 border-dv-mark" />}
+            >
+              The changed code renders something. The outline sits on that
+              element.
+            </Tier>
+            <Tier
+              name="Indirect"
+              swatch={
+                <span className="w-[28px] border-t-2 border-dashed border-dv-mark" />
+              }
+            >
+              The change is in a hook, handler or util that something on screen
+              triggers. The outline sits on the trigger and shows the chain.
+            </Tier>
+            <Tier
+              name="Backstage"
+              swatch={
+                <span className="h-[14px] w-[28px] border border-dv-edge bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgba(20,22,27,0.25)_4px_5px)]" />
+              }
+            >
+              Migrations, CI, config, or UI hidden behind an interaction. Listed
+              in a drawer and marked as not visually verified.
+            </Tier>
+          </div>
+        </section>
 
-      <section className="border-t border-border-subtle py-4xl">
-        <Container>
-          <Stack gap="lg" className="max-w-(--container-3xl)">
-            <Title order={2}>77 files, 5,000 lines, tests green. Now what?</Title>
-            <Text size="lg" tone="secondary">
-              Large PRs, often agent-written, pass the build and still leave you without an entry point. So you pull the
-              branch and click around where you suspect risk. Deltaview makes that step guided: every changed hunk ends up on
-              an overlay or in the Backstage drawer, so nothing is silently skipped.
-            </Text>
-          </Stack>
-        </Container>
-      </section>
-
-      <section className="border-t border-border-subtle py-4xl">
-        <Container>
-          <Stack gap="2xl">
-            <Title order={2}>How it works</Title>
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} gap="lg">
-              {steps.map(([title, body], i) => (
-                <Card key={title}>
-                  <Text size="sm" tone="brand" mono>
-                    0{i + 1}
-                  </Text>
-                  <CardTitle>{title}</CardTitle>
-                  <CardDescription>{body}</CardDescription>
-                </Card>
-              ))}
-            </SimpleGrid>
-          </Stack>
-        </Container>
-      </section>
-
-      <section className="border-t border-border-subtle py-4xl">
-        <Container>
-          <Stack gap="2xl">
-            <Stack gap="sm" className="max-w-(--container-3xl)">
-              <Title order={2}>Changes shown where they take effect</Title>
-              <Text size="lg" tone="secondary">
-                Every hunk belongs to exactly one item, and every item has one of three tiers.
-              </Text>
-            </Stack>
-            <SimpleGrid cols={{ base: 1, md: 3 }} gap="lg">
-              {tiers.map((t) => (
-                <Card key={t.name}>
-                  <Badge variant={t.tone} className="self-start">
-                    {t.name}
-                  </Badge>
-                  <CardDescription>{t.body}</CardDescription>
-                  <Code className="mt-auto self-start whitespace-normal">{t.example}</Code>
-                </Card>
-              ))}
-            </SimpleGrid>
-          </Stack>
-        </Container>
-      </section>
-
-      <section className="border-t border-border-subtle py-4xl">
-        <Container>
-          <Stack gap="2xl">
-            <Title order={2}>Built not to surprise you</Title>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} gap="lg">
-              {guardrails.map(([Icon, title, body]) => (
-                <Group key={title} gap="lg" align="start">
-                  <ThemeIcon tone="brand" size="lg">
-                    <Icon aria-hidden />
-                  </ThemeIcon>
-                  <Stack gap="xs">
-                    <Text size="lg" weight="medium">
-                      {title}
-                    </Text>
-                    <Text tone="secondary">{body}</Text>
-                  </Stack>
-                </Group>
-              ))}
-            </SimpleGrid>
-          </Stack>
-        </Container>
-      </section>
-
-      <section className="border-t border-border-subtle py-4xl">
-        <Container>
-          <SimpleGrid cols={{ base: 1, md: 2 }} gap="2xl">
-            <Stack gap="md">
-              <ThemeIcon tone="success" size="lg">
-                <GitPullRequest aria-hidden />
-              </ThemeIcon>
-              <Title order={3}>One GitHub review</Title>
-              <Text tone="secondary">
-                Finish review posts to the open PR through your authenticated <Code>gh</Code>. Each decision becomes an inline
-                comment on the lines it covers. Any rejection requests changes; all approved approves. On your own PR it falls
-                back to a comment.
-              </Text>
-            </Stack>
-            <Stack gap="md">
-              <ThemeIcon tone="info" size="lg">
-                <ShieldCheck aria-hidden />
-              </ThemeIcon>
-              <Title order={3}>A manifest an agent can act on</Title>
-              <Text tone="secondary">
-                Every decision is written to <Code>.deltaview/reviews/</Code> as JSON and Markdown the moment you make it. Hand
-                it to a follow-up agent: “fix all rejected items”. Stop halfway and run it again to resume.
-              </Text>
-            </Stack>
-          </SimpleGrid>
-        </Container>
-      </section>
-
-      <section className="border-t border-border-subtle py-4xl">
-        <Container>
-          <Card variant="featured" className="items-start gap-lg p-2xl">
-            <Title order={2}>Install</Title>
-            <Text tone="secondary">
-              Needs Claude Code with the Claude in Chrome extension, Node.js 20+, and a web project whose dev server already
-              runs locally.
-            </Text>
-            <div className="w-full max-w-(--container-xl)">
-              <Command>{INSTALL}</Command>
+        {/* What you get at the end */}
+        <section className="border-y border-dv-line bg-white">
+          <div className={`${wrap} flex flex-col gap-[40px] py-[112px]`}>
+            <div className="flex max-w-[40em] flex-col gap-[14px]">
+              <h2 className={h2}>Finish review leaves two things behind</h2>
+              <p className="m-0 text-[18px] leading-[1.55] text-dv-body">
+                A review on the pull request for the people, and a manifest for
+                the next agent.
+              </p>
             </div>
-            <Button asChild variant="primary">
-              <NextLink href="/docs">Get started</NextLink>
-            </Button>
-          </Card>
-        </Container>
-      </section>
-    </main>
+            <div className="flex flex-wrap gap-[32px]">
+              <div className="flex min-w-0 flex-[1_1_440px] flex-col gap-[16px]">
+                <div className="overflow-hidden rounded-[8px] border border-dv-line">
+                  <div className="border-b border-dv-line bg-dv-raised px-[16px] py-[14px] text-[15px]">
+                    <strong>you</strong> requested changes
+                  </div>
+                  <div className="border-b border-dv-rule font-dv-mono text-[12px] leading-[1.75]">
+                    <div className="px-[16px] text-dv-muted">
+                      src/checkout/Summary.tsx
+                    </div>
+                    <div className="bg-dv-del-bg px-[16px] text-dv-del">
+                      - &lt;FreeShippingBanner /&gt;
+                    </div>
+                  </div>
+                  <div className="m-[14px_16px] border-l-[3px] border-dv-del px-[16px] py-[14px] text-[15px] leading-[1.5]">
+                    Rejected: the banner is still referenced in the cart drawer.
+                  </div>
+                </div>
+                <p className="m-0 text-[16px] leading-[1.55] text-dv-body">
+                  Posted through your <code className="text-[13px]">gh</code>{" "}
+                  login. Each decision becomes an inline comment on its lines.
+                  One rejection requests changes; all approved approves.
+                </p>
+              </div>
+              <div className="flex min-w-0 flex-[1_1_440px] flex-col gap-[16px]">
+                <pre className="m-0 overflow-x-auto rounded-[8px] bg-dv-ink px-[20px] py-[18px] text-[12px] leading-[1.75] text-dv-rule">
+                  {`.deltaview/reviews/feat-checkout-summary.json
+{
+  "ref": "feat/checkout-summary",
+  "tests": { "passed": 214, "failed": 2 },
+  "items": [
+    { "tier": "direct",
+      "route": "/checkout",
+      "decision": "rejected",
+      "comment": "banner still used in cart" },
+    …
+  ]
+}`}
+                </pre>
+                <p className="m-0 text-[16px] leading-[1.55] text-dv-body">
+                  Written as JSON and Markdown after every decision. Hand it to
+                  a follow-up agent with “fix the rejected items”, or stop
+                  halfway and run the command again to resume.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Guarantees */}
+        <section
+          className={`${wrap} flex flex-wrap gap-x-[64px] gap-y-[40px] py-[112px]`}
+        >
+          <h2 className={`${h2} flex-[1_1_280px]`}>What it won&apos;t touch</h2>
+          <dl className="m-0 min-w-0 flex-[2_1_560px]">
+            {guarantees.map(([term, body]) => (
+              <div
+                key={term}
+                className="flex flex-wrap gap-x-[32px] gap-y-[6px] border-t border-dv-edge py-[20px] last:border-b"
+              >
+                <dt className="flex-[1_1_200px] text-[18px] font-semibold">
+                  {term}
+                </dt>
+                <dd className="m-0 flex-[2_1_320px] text-[17px] leading-[1.5] text-dv-body">
+                  {body}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {/* Install */}
+        <section className="bg-dv-ink text-dv-paper">
+          <div
+            className={`${wrap} flex flex-wrap items-start gap-x-[64px] gap-y-[40px] py-[96px]`}
+          >
+            <div className="flex flex-[1_1_380px] flex-col gap-[16px]">
+              <h2 className={h2}>Install</h2>
+              <ul className="m-0 list-disc pl-[20px] text-[17px] leading-[1.7] text-dv-dim">
+                {requirements.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-[16px]">
+              <InstallBox dark />
+              <p className="m-0 text-[16px] text-dv-dim">
+                Then run{" "}
+                <code className="text-[14px] text-dv-paper">
+                  /deltaview &lt;branch&gt;
+                </code>
+                .{" "}
+                <NextLink
+                  href="/docs"
+                  className="text-dv-mark hover:text-dv-paper"
+                >
+                  Read the setup guide
+                </NextLink>
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer
+        className={`${wrap} flex flex-wrap justify-between gap-[12px] py-[28px] text-[15px] text-dv-muted`}
+      >
+        <span>A Claude Code plugin by David Eriksson</span>
+        <span className="flex gap-[24px]">
+          <a href={REPO}>Source</a>
+          <a href={`${REPO}/releases`}>Releases</a>
+        </span>
+      </footer>
+    </div>
   );
 }
 
-/** A static rendering of the overlay, after the spec's mockup. */
-function OverlayPreview() {
+function InstallBox({ dark }: { dark?: boolean }) {
   return (
     <div
-      aria-label="Illustration: an overlay on a component, with its diff and the approve, reject and comment bar"
-      role="img"
-      className="rounded-2xl border border-border-default bg-bg-surface p-lg sm:p-2xl"
+      className={`flex max-w-[520px] items-start justify-between gap-[12px] rounded-[8px] border py-[16px] pr-[16px] pl-[20px] ${
+        dark ? "max-w-none border-dv-body" : "border-dv-line bg-white"
+      }`}
     >
-      <Group gap="xs" className="mb-xl">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="size-3 rounded-full bg-bg-surface-raised" />
-        ))}
-        <span className="ml-md text-code-sm text-text-secondary">localhost:4500/checkout</span>
-      </Group>
-      <div className="grid gap-lg md:grid-cols-[3fr_2fr]">
-        <Stack gap="xs">
-          <span className="text-code-sm text-text-info">DELTAVIEW/feat/checkout-summary</span>
-          <div className="rounded-md border-2 border-text-info bg-bg-info-subtle p-lg">
-            <div className="rounded-md border border-border-strong bg-bg-canvas p-lg">
-              <Stack gap="sm">
-                <Text weight="medium">Order summary</Text>
-                <Group justify="between" className="text-body-md text-text-secondary">
-                  <span>Subtotal</span>
-                  <span>$84.00</span>
-                </Group>
-                <Group justify="between" className="text-body-md text-text-secondary">
-                  <span>Shipping</span>
-                  <span>Free</span>
-                </Group>
-                <Group justify="between" className="text-body-md">
-                  <span>Total</span>
-                  <span>$84.00</span>
-                </Group>
-              </Stack>
+      <pre
+        className={`m-0 text-[13px] leading-[1.8] break-words whitespace-pre-wrap ${
+          dark ? "text-dv-paper" : ""
+        }`}
+      >
+        {INSTALL}
+      </pre>
+      <CopyText
+        value={INSTALL}
+        className={`min-h-[44px] flex-none cursor-pointer rounded-[6px] border px-[14px] text-[14px] font-medium ${
+          dark
+            ? "border-dv-body bg-transparent text-dv-paper"
+            : "border-dv-line bg-dv-paper text-dv-ink"
+        }`}
+      />
+    </div>
+  );
+}
+
+/** A static app element with its overlay, and the review panel opened on it. */
+function HeroDemo() {
+  return (
+    <div
+      role="img"
+      aria-label="Illustration: an outlined order summary card with its diff, a plain-language summary, and approve, reject and comment buttons"
+      className="flex min-w-0 flex-[1_1_480px] flex-col gap-[12px]"
+    >
+      <div className="flex flex-col gap-[20px] rounded-[12px] bg-dv-well px-[28px] pt-[48px] pb-[28px]">
+        <div className="relative max-w-[360px]">
+          <div className="flex flex-col gap-[12px] rounded-[8px] bg-white px-[22px] py-[20px] text-[16px]">
+            <div className="text-[18px] font-semibold">Order summary</div>
+            <Row a="Subtotal" b="$84.00" />
+            <Row a="Shipping" b="Free" />
+            <div className="flex justify-between border-t border-dv-rule pt-[12px] font-semibold">
+              <span>Total</span>
+              <span>$84.00</span>
             </div>
           </div>
-          <Group gap="sm" className="rounded-md border border-border-default bg-bg-surface-raised p-sm">
-            <Badge variant="success">Approve</Badge>
-            <Badge variant="error">Reject</Badge>
-            <Badge variant="neutral">Comment</Badge>
-          </Group>
-        </Stack>
-        <div className="overflow-hidden rounded-md border border-border-default text-code-sm">
-          <div className="bg-bg-surface-raised px-md py-xs text-text-secondary">src/checkout/Summary.tsx</div>
-          <pre className="overflow-x-auto bg-bg-success-subtle px-md py-sm text-text-success">
-            {"+ const shipping = total > 50 ? 0 : 4.9;\n+ <Row label=\"Shipping\" value={fmt(shipping)} />"}
+          <div className="pointer-events-none absolute inset-[-7px] rounded-[11px] border-2 border-dv-mark" />
+          <div className={`${tag} top-[-32px] py-[4px]`}>Direct, 1 of 12</div>
+        </div>
+
+        <div className="ml-[32px] overflow-hidden rounded-[8px] border border-dv-ink bg-white">
+          <div className="border-b border-dv-rule px-[16px] py-[12px] font-dv-mono text-[12px] text-dv-body">
+            src/checkout/Summary.tsx
+          </div>
+          <pre className="m-0 overflow-x-auto text-[12px] leading-[1.75] [&>span]:block [&>span]:px-[16px]">
+            <span className="bg-dv-add-bg text-dv-add">
+              + const shipping = total &gt; 50 ? 0 : 4.9;
+            </span>
+            <span className="bg-dv-add-bg text-dv-add">
+              + &lt;Row label=&quot;Shipping&quot; value={"{fmt(shipping)}"}{" "}
+              /&gt;
+            </span>
+            <span className="bg-dv-chg-bg text-dv-chg">
+              ~ &lt;Row label=&quot;Total&quot; value=
+              {"{fmt(total + shipping)}"} /&gt;
+            </span>
+            <span className="bg-dv-del-bg text-dv-del">
+              - &lt;FreeShippingBanner /&gt;
+            </span>
           </pre>
-          <pre className="overflow-x-auto bg-bg-warning-subtle px-md py-sm text-text-warning">
-            {"~ <Row label=\"Total\" value={fmt(total + shipping)} />"}
-          </pre>
-          <pre className="overflow-x-auto bg-bg-brand-subtle px-md py-sm text-text-error">{"- <FreeShippingBanner />"}</pre>
-          <p className="border-t border-border-subtle px-md py-sm font-sans text-body-sm text-text-secondary">
-            Adds a shipping row that is free above $50 and includes it in the total. The free-shipping banner is removed.
+          <p className="m-0 px-[16px] py-[14px] text-[15px] leading-[1.5] text-dv-body">
+            Adds a shipping row that is free above $50 and includes it in the
+            total. The free-shipping banner is removed.
           </p>
+          <div className="flex flex-wrap gap-[8px] px-[16px] pb-[16px] text-[15px] [&>span]:inline-flex [&>span]:min-h-[44px] [&>span]:items-center [&>span]:rounded-[6px] [&>span]:border [&>span]:px-[18px]">
+            {/* Spans, not buttons: this is a picture of the panel, not a control. */}
+            <span className="border-dv-add bg-dv-add font-semibold text-white">
+              Approve
+            </span>
+            <span className="border-dv-del bg-white font-semibold text-dv-del">
+              Reject
+            </span>
+            <span className="border-dv-edge bg-white font-medium">Comment</span>
+          </div>
         </div>
       </div>
+      <p className="m-0 text-[14px] text-dv-muted">
+        feat/checkout-summary, running on localhost:4500/checkout
+      </p>
+    </div>
+  );
+}
+
+function TierDemo() {
+  return (
+    <div
+      role="img"
+      aria-label="Illustration: a card with a solid outline, a button with a dashed outline and its call chain, and a backstage drawer listing files"
+      className="flex flex-wrap items-start gap-x-[48px] gap-y-[40px] rounded-[12px] bg-dv-well px-[28px] py-[40px]"
+    >
+      <div className="flex min-w-0 flex-[2_1_420px] flex-col gap-[40px]">
+        <div className="relative">
+          <div className="flex flex-col gap-[8px] rounded-[8px] bg-white px-[20px] py-[18px]">
+            <div className="font-semibold">Order summary</div>
+            <Row a="3 items" b="$84.00" />
+          </div>
+          <div className="absolute inset-[-7px] rounded-[11px] border-2 border-dv-mark" />
+          <div className={`${tag} top-[-30px] py-[3px]`}>Direct</div>
+        </div>
+        <div className="flex flex-col items-start gap-[14px]">
+          <div className="relative">
+            <span className="inline-flex min-h-[44px] items-center rounded-[6px] bg-dv-ink px-[22px] font-semibold text-white">
+              Save order
+            </span>
+            <div className="absolute inset-[-7px] rounded-[10px] border-2 border-dashed border-dv-mark" />
+            <div className={`${tag} top-[-30px] py-[3px]`}>Indirect</div>
+          </div>
+          <code className="box-border max-w-full overflow-x-auto rounded-[6px] bg-white px-[12px] py-[8px] text-[12px] leading-[1.6] whitespace-nowrap text-dv-body">
+            Save order → useSaveOrder() → POST /api/orders → orders.handler.ts
+          </code>
+        </div>
+      </div>
+      <div className="min-w-0 flex-[1_1_260px] overflow-hidden rounded-[8px] border border-dv-edge bg-white">
+        <div className="border-b border-dv-rule px-[16px] py-[14px] font-semibold">
+          Backstage drawer
+        </div>
+        <div className={`${hatch} py-[6px]`}>
+          {[".github/workflows/ci.yml", "db/migrations/0042_shipping.sql"].map(
+            (f) => (
+              <div key={f} className="px-[16px] py-[10px]">
+                <code className="text-[12px]">{f}</code>
+              </div>
+            ),
+          )}
+        </div>
+        <div className="border-t border-dv-rule px-[16px] py-[12px] text-[14px] text-dv-muted">
+          Not visually verified
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Tier({
+  name,
+  swatch,
+  children,
+}: {
+  name: string;
+  swatch: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-[1_1_280px] flex-col gap-[10px]">
+      <div className="flex items-center gap-[12px] text-[20px] font-bold">
+        <span aria-hidden className="contents">
+          {swatch}
+        </span>
+        {name}
+      </div>
+      <p className="m-0 text-[17px] leading-[1.5] text-dv-body">{children}</p>
+    </div>
+  );
+}
+
+function Row({ a, b }: { a: string; b: string }) {
+  return (
+    <div className="flex justify-between text-dv-muted">
+      <span>{a}</span>
+      <span>{b}</span>
     </div>
   );
 }
