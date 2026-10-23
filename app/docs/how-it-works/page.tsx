@@ -49,7 +49,8 @@ export default function HowItWorks() {
         <li>Test hunks attach to the item for the code they test, not to an item of their own.</li>
         <li>
           Shared code used by many elements is pinned to one representative element; the others are listed under{" "}
-          <strong>Affects</strong>.
+          <strong>Affects</strong>. When the instances on that page share a stable selector, it may match them all: the
+          first is the anchor and the rest get dim outlines.
         </li>
         <li>
           Code with no UI path that nothing calls is flagged <strong>appears unused</strong>, checked with a grep across the
@@ -61,8 +62,9 @@ export default function HowItWorks() {
       <Title order={2}>Anchoring</Title>
       <Text size="lg" tone="secondary">
         With your dev server running, Claude opens a new Chrome tab, navigates to each item&apos;s route and finds its
-        element. It checks that the selector matches exactly one element with a read-only{" "}
-        <Code>document.querySelectorAll(selector).length</Code>. Selector preference:
+        element. It checks that the selector matches exactly one element (or, for shared code, exactly the instances of
+        the changed component) with a read-only <Code>document.querySelectorAll(selector).length</Code>. Selector
+        preference:
       </Text>
       <ol>
         <li>
@@ -82,12 +84,14 @@ export default function HowItWorks() {
       <Title order={2}>The proxy</Title>
       <Text size="lg" tone="secondary">
         <Code>deltaview serve</Code> runs a plain Node HTTP server in front of your dev server, e.g.{" "}
-        <Code>localhost:4500</Code> → <Code>localhost:3000</Code>. It:
+        <Code>localhost:4500</Code> → <Code>localhost:3000</Code>. HTTPS dev servers work too; self-signed certificates
+        (mkcert, Vite&apos;s basic SSL) are accepted on loopback only. It:
       </Text>
       <ul>
         <li>
           injects <Code>{'<script type="module" src="/__deltaview/overlay.mjs">'}</Code> into every HTML response, and drops
-          its CSP headers so the script can load;
+          its CSP and <Code>X-Frame-Options</Code> headers so the script can load and the page can be framed for the
+          mobile and before/after views;
         </li>
         <li>passes WebSocket upgrades through, so hot module reload keeps working;</li>
         <li>rewrites redirects and the Origin and Referer headers between the proxy and dev server origins;</li>
@@ -103,6 +107,10 @@ export default function HowItWorks() {
       <Text size="lg" tone="secondary">
         The overlay lives in a Shadow DOM so its styles and your app&apos;s don&apos;t touch. Keystrokes inside it don&apos;t
         reach your app&apos;s hotkeys, and outlines re-attach when the DOM changes or an SPA navigates.
+      </Text>
+      <Text size="lg" tone="secondary">
+        For the before/after view, a second proxy in the same process fronts the base version&apos;s dev server. It draws
+        the same outlines but is read-only: it refuses decisions and Finish.
       </Text>
     </>
   );

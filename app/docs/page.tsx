@@ -46,6 +46,11 @@ export default function GettingStarted() {
         already has that name. See <NextLink href="/docs/usage" className="text-text-brand hover:underline">Running a review</NextLink>{" "}
         for what happens next.
       </Text>
+      <Text size="lg" tone="secondary">
+        After the review, <Code>/deltaview:fix [branch]</Code> works through the rejected and commented items in the
+        reviewed branch. Run <Code>/deltaview &lt;branch&gt;</Code> again once the fixes are pushed to re-review; see{" "}
+        <NextLink href="/docs/usage#fixing" className="text-text-brand hover:underline">Fixing and re-reviewing</NextLink>.
+      </Text>
 
       <Title order={2}>Update</Title>
       <Text size="lg" tone="secondary">Refresh the marketplace to fetch the latest release, then restart Claude Code so the new version loads:</Text>

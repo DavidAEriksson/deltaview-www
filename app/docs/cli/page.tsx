@@ -21,19 +21,24 @@ const commands = [
     body: "Prints the path of an unfinished manifest for this exact ref and head commit that has at least one item, or nothing.",
   },
   {
+    name: "previous",
+    usage: "deltaview previous --dir <main>/.deltaview/reviews --ref <ref> --head <sha>",
+    body: "Prints the path of the newest manifest for this ref at a different head commit, finished or not, that has at least one item, or nothing. This is the review to carry decisions from.",
+  },
+  {
     name: "patch",
     usage: "deltaview patch --manifest <manifest> --json '{\"tests\":{…}}'",
     body: "Merges top-level fields into the manifest. Only tests, pr and newEnvVars are allowed.",
   },
   {
     name: "add-items",
-    usage: "deltaview add-items --manifest <manifest> --items <items.json>",
-    body: "Validates and sets the item list. Fails with every problem at once: uncovered or duplicated hunks, unknown hunk ids, duplicate item ids, invalid tiers, missing summaries, and direct/indirect items without a route or selector.",
+    usage: "deltaview add-items --manifest <manifest> --items <items.json> [--carry-from <previous>]",
+    body: "Validates and sets the item list. Fails with every problem at once: uncovered or duplicated hunks, unknown hunk ids, duplicate item ids, invalid tiers, missing summaries, and direct/indirect items without a route or selector. With --carry-from, copies decisions from that manifest onto items whose edits are identical, flags the rest as changed since the last review, and prints how many carried over.",
   },
   {
     name: "serve",
-    usage: "deltaview serve --manifest <manifest> --target <devUrl> --port <port>",
-    body: 'Starts the injecting proxy. Prints {"proxyUrl":…,"port":…}; on Finish prints {"done":true,"reviewUrl":…,"manifestPath":…} and exits 0.',
+    usage: "deltaview serve --manifest <manifest> --target <devUrl> --port <port> [--base-target <baseDevUrl>]",
+    body: 'Starts the injecting proxy. With --base-target, also starts a read-only proxy in front of the base version\'s dev server on a free port, for the before/after view. Prints {"proxyUrl":…,"port":…,"baseUrl":…} (baseUrl is null without --base-target); on Finish prints {"done":true,"reviewUrl":…,"manifestPath":…} and exits 0.',
   },
 ];
 
@@ -62,8 +67,9 @@ export default function Cli() {
           <Code>GET /__deltaview/manifest</Code>: the current manifest.
         </li>
         <li>
-          <Code>POST /__deltaview/decision</Code> with <Code>{'{"itemId","decision","comment"}'}</Code>. A{" "}
-          <Code>decision</Code> of <Code>null</Code> resets the item.
+          <Code>POST /__deltaview/decision</Code> with <Code>{'{"itemId","decision","comment","line"}'}</Code>. A{" "}
+          <Code>decision</Code> of <Code>null</Code> resets the item; <Code>line</Code> is optional. The base proxy
+          refuses every POST.
         </li>
         <li>
           <Code>POST /__deltaview/finish</Code>: posts the review (when there&apos;s a PR) and finishes.

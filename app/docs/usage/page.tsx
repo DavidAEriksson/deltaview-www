@@ -54,12 +54,14 @@ export default function Usage() {
         </li>
         <li>
           <strong>Review.</strong> A local proxy starts in front of your dev server and the review opens in a new Chrome tab.
-          The Deltaview bar sits bottom-left.
+          The Deltaview bar sits bottom-left. If any item is on screen, you&apos;re asked whether to also start the base
+          version for a side-by-side <strong>Before ⇄ after</strong> view. That takes a second worktree, install and dev
+          server on another port; if it fails, the review continues without it.
         </li>
         <li>
           <strong>Finish.</strong> Clicking <strong>Finish review</strong> posts the review and the agent reports the result:
           the review URL, counts per decision, the test result and the manifest path. The dev server is stopped and the
-          worktree removed.
+          worktree removed, along with the base version&apos;s if one was started.
         </li>
       </ol>
 
@@ -74,8 +76,32 @@ export default function Usage() {
         items and your decisions kept. Analysis and anchoring are skipped, but the app and proxy start again.
       </Text>
       <Text size="lg" tone="secondary">
-        If the branch has new commits, a fresh review starts and you&apos;re told the earlier decisions were not carried
-        over. A finished review is never resumed.
+        If the branch has new commits, a fresh review starts that builds on the earlier one. A finished review is never
+        resumed.
+      </Text>
+
+      <Title order={2} id="fixing">Fixing and re-reviewing</Title>
+      <Command>{"/deltaview:fix feat/my-branch"}</Command>
+      <Text size="lg" tone="secondary">
+        <Code>/deltaview:fix</Code> reads the newest review of the branch (or the manifest path you pass, or the newest
+        review of any branch when you pass nothing) and works through its rejected and commented items, rejections first,
+        using each item&apos;s hunks, reason and the line it was anchored on. It:
+      </Text>
+      <ul>
+        <li>checks out the reviewed branch in your working copy, after asking, and stops if you have uncommitted changes;</li>
+        <li>warns when the branch has moved on since the review, and checks each item against the current code;</li>
+        <li>
+          makes the smallest change each reason asks for. A comment that is a question rather than a change request is
+          noted, not acted on, and an unclear reason is asked about instead of guessed;
+        </li>
+        <li>runs the test command and reports each item as fixed, not changed, or needing your input;</li>
+        <li>commits only if you say so, and never pushes.</li>
+      </ul>
+      <Text size="lg" tone="secondary">
+        Once the fixes are pushed, run <Code>/deltaview &lt;branch&gt;</Code> again. Claude keeps the earlier review&apos;s
+        grouping, titles and selectors for code that hasn&apos;t changed. Items whose edits are byte-identical to an item
+        in the last review get its decision back, marked <em>carried over</em>; the rest are marked{" "}
+        <em>changed since your last review</em>.
       </Text>
 
       <Title order={2}>Ground rules</Title>

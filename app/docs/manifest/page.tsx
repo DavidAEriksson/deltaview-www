@@ -19,8 +19,10 @@ const example = `{
     "chain": ["Save button", "useSaveOrder()", "POST /api/orders", "orders.handler.ts"],
     "affects": [], "hunkIds": ["h1"], "summary": "…",
     "howToReach": null, "appearsUnused": false, "visuallyVerified": true,
-    "decision": "rejected", "comment": "Missing error state", "decidedAt": "2026-10-22T12:00:00.000Z"
+    "decision": "rejected", "comment": "Missing error state", "decidedAt": "2026-10-22T12:00:00.000Z",
+    "line": { "hunkId": "h1", "index": 4 }
   }],
+  "previousReview": ".deltaview/reviews/feat-checkout-20261021-093000.json",
   "status": "finished",
   "reviewUrl": "https://github.com/acme/shop/pull/7#pullrequestreview-…",
   "error": null,
@@ -34,7 +36,8 @@ export default function Manifest() {
       <Text size="lg" tone="secondary">
         Every review is recorded in a manifest in your <strong>main checkout</strong>, not the worktree, which is removed
         afterwards. It&apos;s written on every decision, so nothing is lost if the tab crashes, and it&apos;s shaped for a
-        follow-up agent to act on: “fix all rejected items”.
+        follow-up agent to act on: <Code>/deltaview:fix</Code> reads it to fix the rejected and commented items, and the
+        next review of the branch reads it to carry decisions over.
       </Text>
 
       <Title order={2}>
@@ -80,6 +83,9 @@ export default function Manifest() {
           <Code>status</Code>: <Code>in_progress</Code> or <Code>finished</Code>. <Code>reviewUrl</Code> is set after
           posting; <Code>error</Code> holds the last posting error.
         </li>
+        <li>
+          <Code>previousReview</Code>: on a re-review, the path of the earlier manifest decisions were carried over from.
+        </li>
       </ul>
 
       <Title order={3} size={4}>Items</Title>
@@ -89,7 +95,8 @@ export default function Manifest() {
         </li>
         <li>
           <Code>route</Code> (a pathname, no query or hash) and <Code>selector</Code> (for{" "}
-          <Code>document.querySelector</Code>): required for direct and indirect, <Code>null</Code> for backstage.
+          <Code>document.querySelectorAll</Code>; the first match is the anchor): required for direct and indirect,{" "}
+          <Code>null</Code> for backstage.
         </li>
         <li>
           <Code>chain</Code>: the breadcrumb from trigger to change, for indirect items.
@@ -106,6 +113,15 @@ export default function Manifest() {
         <li>
           <Code>decision</Code>: <Code>approved</Code>, <Code>rejected</Code>, <Code>comment</Code> or <Code>null</Code>;
           with <Code>comment</Code> and <Code>decidedAt</Code>. A rejection always has a reason.
+        </li>
+        <li>
+          <Code>line</Code>: the diff line a rejection or comment is anchored on, as <Code>{"{hunkId, index}"}</Code> into
+          that hunk&apos;s lines, or <Code>null</Code> for the item&apos;s first change. Approvals have none.
+        </li>
+        <li>
+          <Code>carriedOver</Code>: <Code>true</Code> when the decision came from the previous review because the
+          item&apos;s edits are identical. <Code>changedSinceReview</Code>: <Code>true</Code> when no item in the previous
+          review had the same edits.
         </li>
       </ul>
     </>

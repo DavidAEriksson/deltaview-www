@@ -5,7 +5,7 @@ import { CopyText } from "./copy";
 import { DemoVideo } from "./demo-video";
 import { INSTALL, REPO } from "./site";
 
-const VERSION = "v1.1.0";
+const VERSION = "v1.4.0";
 
 const steps = [
   [
@@ -29,7 +29,7 @@ const steps = [
   [
     "[4/4] Review",
     ["opened localhost:4500 in Chrome"],
-    "Your app opens behind a small proxy that draws the overlays. Decide on each item, then click Finish review.",
+    "Your app opens behind a small proxy that draws the overlays. Step through the items from the keyboard, compare against the base version side by side or check them at phone width, then click Finish review.",
   ],
 ] as const;
 
@@ -257,8 +257,9 @@ export default function Home() {
                 </div>
                 <p className="m-0 text-[16px] leading-[1.55] text-dv-body">
                   Posted through your <code className="text-[13px]">gh</code>{" "}
-                  login. Each decision becomes an inline comment on its lines.
-                  One rejection requests changes; all approved approves.
+                  login. Rejections and comments land inline, on the line you
+                  picked; approvals are listed in the review body. One rejection
+                  requests changes; all approved approves.
                 </p>
               </div>
               <div className="flex min-w-0 flex-[1_1_440px] flex-col gap-[16px]">
@@ -277,9 +278,11 @@ export default function Home() {
 }`}
                 </pre>
                 <p className="m-0 text-[16px] leading-[1.55] text-dv-body">
-                  Written as JSON and Markdown after every decision. Hand it to
-                  a follow-up agent with “fix the rejected items”, or stop
-                  halfway and run the command again to resume.
+                  Written as JSON and Markdown after every decision. Run{" "}
+                  <code className="text-[13px]">/deltaview:fix</code> to work
+                  through the rejected items, then review again: decisions on
+                  unchanged items carry over. Stop halfway and run the command
+                  again to resume.
                 </p>
               </div>
             </div>
